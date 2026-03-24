@@ -25,7 +25,7 @@ const SITE = {
    * Optional looping background audio. Autoplay is attempted on load; if the browser blocks it, the first tap or key
    * anywhere on the page also starts playback. The corner control still pauses / resumes.
    */
-  bgMusicSrc: '/audio/rather-lie-slowed-reverb.mp3',
+  bgMusicSrc: `${import.meta.env.BASE_URL}audio/rather-lie-slowed-reverb.mp3`,
 }
 
 /** Toggle whole-site personality */
