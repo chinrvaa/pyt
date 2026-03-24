@@ -1,3 +1,5 @@
+# First time: repo Settings → Pages → Build and deployment → Source: GitHub Actions (save).
+# Without that, configure-pages hits GET /repos/.../pages and returns 404.
 name: Deploy to GitHub Pages
 
 on:
