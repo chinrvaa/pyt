@@ -22,8 +22,8 @@ const SITE = {
   /** Token mint / contract address on Solana (optional). Shown as CA with rgb gradient. */
   coinAddress: '' as string,
   /**
-   * Optional looping background audio. Autoplay is attempted on load; if the browser blocks it, the first tap or key
-   * anywhere on the page also starts playback. The corner control still pauses / resumes.
+   * Background audio: tries unmuted autoplay first; if blocked, starts muted (still “autoplay”) then unmutes on first
+   * tap, key, or the SOUND ON control. Browsers require a gesture for audible autoplay.
    */
   bgMusicSrc: `${import.meta.env.BASE_URL}audio/rather-lie-slowed-reverb.mp3`,
 }
@@ -131,7 +131,7 @@ function FlashbangIntro() {
       if (e.animationName === 'flashbang-fade') setActive(false)
     }
     el.addEventListener('animationend', onEnd)
-    const fallback = window.setTimeout(() => setActive(false), 2600)
+    const fallback = window.setTimeout(() => setActive(false), 3800)
     return () => {
       el.removeEventListener('animationend', onEnd)
       window.clearTimeout(fallback)
@@ -147,6 +147,8 @@ function BackgroundMusic({ variant }: { variant: 'carti' | 'cryptic' | 'default'
   const src = SITE.bgMusicSrc.trim()
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
+  /** Track is playing muted so browsers that block unmuted autoplay still start the track immediately. */
+  const [silentAutoplay, setSilentAutoplay] = useState(false)
 
   useEffect(() => {
     const el = audioRef.current
@@ -167,15 +169,32 @@ function BackgroundMusic({ variant }: { variant: 'carti' | 'cryptic' | 'default'
     const tryStart = async () => {
       if (cancelled || !el) return
       try {
+        el.muted = false
         await el.play()
+        setSilentAutoplay(false)
         detachGesture()
       } catch {
-        /* autoplay blocked; first pointer / key will retry */
+        try {
+          el.muted = true
+          await el.play()
+          setSilentAutoplay(true)
+        } catch {
+          /* still blocked; gesture will retry */
+        }
       }
     }
 
     const onFirstGesture = () => {
-      void tryStart()
+      if (!el || cancelled) return
+      if (el.muted && !el.paused) {
+        el.muted = false
+        setSilentAutoplay(false)
+        detachGesture()
+        return
+      }
+      el.muted = false
+      setSilentAutoplay(false)
+      void el.play().then(() => detachGesture()).catch(() => void tryStart())
     }
 
     document.addEventListener('pointerdown', onFirstGesture)
@@ -183,12 +202,15 @@ function BackgroundMusic({ variant }: { variant: 'carti' | 'cryptic' | 'default'
 
     void tryStart()
     el.addEventListener('canplaythrough', tryStart, { once: true })
+    el.addEventListener('loadeddata', tryStart, { once: true })
 
     return () => {
       cancelled = true
+      el.muted = false
       el.removeEventListener('play', onPlay)
       el.removeEventListener('pause', onPause)
       el.removeEventListener('canplaythrough', tryStart)
+      el.removeEventListener('loadeddata', tryStart)
       detachGesture()
     }
   }, [src])
@@ -201,20 +223,45 @@ function BackgroundMusic({ variant }: { variant: 'carti' | 'cryptic' | 'default'
   async function toggle() {
     const el = audioRef.current
     if (!el) return
+    if (silentAutoplay) {
+      el.muted = false
+      setSilentAutoplay(false)
+      try {
+        await el.play()
+      } catch {
+        setPlaying(false)
+      }
+      return
+    }
     if (playing) {
       el.pause()
       return
     }
     try {
+      el.muted = false
       await el.play()
     } catch {
       setPlaying(false)
     }
   }
 
-  const label = playing ? 'Pause background music' : 'Play background music'
+  const label = silentAutoplay
+    ? 'Unmute background music'
+    : playing
+      ? 'Pause background music'
+      : 'Play background music'
   const caption =
-    variant === 'carti' ? (playing ? 'PAUSE' : 'PLAY') : playing ? 'Pause' : 'Play'
+    variant === 'carti'
+      ? silentAutoplay
+        ? 'SOUND ON'
+        : playing
+          ? 'PAUSE'
+          : 'PLAY'
+      : silentAutoplay
+        ? 'Sound on'
+        : playing
+          ? 'Pause'
+          : 'Play'
 
   return (
     <div className={wrapClass}>

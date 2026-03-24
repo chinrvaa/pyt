@@ -49,12 +49,59 @@ body:has(.carti-vibe) {
 
 /* One-shot flashbang on load (see FlashbangIntro in App.tsx) */
 @keyframes flashbang-fade {
-  0%,
-  32% {
+  0% {
     opacity: 1;
+    filter: brightness(1.2) contrast(1.08);
+  }
+  4% {
+    opacity: 1;
+    filter: brightness(1.55) contrast(1.12);
+  }
+  9% {
+    opacity: 0.82;
+    filter: brightness(0.95) contrast(1);
+  }
+  14% {
+    opacity: 1;
+    filter: brightness(1.45) contrast(1.1);
+  }
+  20% {
+    opacity: 0.9;
+    filter: brightness(1.05) contrast(1);
+  }
+  26% {
+    opacity: 1;
+    filter: brightness(1.65) contrast(1.15);
+  }
+  34%,
+  42% {
+    opacity: 1;
+    filter: brightness(1.35) contrast(1.08);
+  }
+  48% {
+    opacity: 1;
+    filter: brightness(1.2) contrast(1.05);
   }
   100% {
     opacity: 0;
+    filter: brightness(1) contrast(1);
+  }
+}
+
+@keyframes flashbang-pulse-ring {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  8%,
+  25% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  30% {
+    opacity: 0;
+    transform: scale(1.04);
   }
 }
 
@@ -62,41 +109,54 @@ body:has(.carti-vibe) {
   position: fixed;
   inset: 0;
   z-index: 2147483646;
-  background: #ffffff;
-  pointer-events: none;
-  animation: flashbang-fade 2.1s cubic-bezier(0.2, 0.85, 0.35, 1) forwards;
+  pointer-events: auto;
+  cursor: pointer;
+  background: #fff;
+  animation: flashbang-fade 3.15s cubic-bezier(0.18, 0.82, 0.32, 1) forwards;
+  box-shadow:
+    inset 0 0 100px rgba(255, 255, 255, 1),
+    inset 0 0 220px rgba(255, 240, 220, 0.35);
 }
 
-/* Subtle ground shake on main while flashbang overlay is mounted */
+.flashbang-overlay::after {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.95) 0%, transparent 55%);
+  animation: flashbang-pulse-ring 3.15s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Harder ground shake on main while flashbang overlay is mounted */
 @keyframes flashbang-jitter {
   0%,
   100% {
     transform: translate(0, 0) rotate(0deg);
   }
-  15% {
-    transform: translate(-2px, 1px) rotate(-0.28deg);
+  12% {
+    transform: translate(-4px, 2px) rotate(-0.55deg);
   }
-  30% {
-    transform: translate(2px, -1px) rotate(0.22deg);
+  25% {
+    transform: translate(4px, -2px) rotate(0.48deg);
   }
-  45% {
-    transform: translate(-1px, -2px) rotate(-0.18deg);
+  38% {
+    transform: translate(-3px, -4px) rotate(-0.4deg);
   }
-  60% {
-    transform: translate(2px, 1px) rotate(0.2deg);
+  52% {
+    transform: translate(5px, 2px) rotate(0.42deg);
   }
-  75% {
-    transform: translate(-2px, 0) rotate(-0.15deg);
+  68% {
+    transform: translate(-5px, -1px) rotate(-0.38deg);
   }
-  90% {
-    transform: translate(1px, 2px) rotate(0.12deg);
+  82% {
+    transform: translate(3px, 4px) rotate(0.35deg);
   }
 }
 
 body:has(.flashbang-overlay) main.enter-page {
   animation:
     page-enter 1s cubic-bezier(0.22, 1, 0.36, 1) both,
-    flashbang-jitter 0.13s linear infinite;
+    flashbang-jitter 0.075s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -104,6 +164,11 @@ body:has(.flashbang-overlay) main.enter-page {
     animation: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .flashbang-overlay::after {
+    display: none !important;
   }
 
   .enter-page {
